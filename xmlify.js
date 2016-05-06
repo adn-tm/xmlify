@@ -134,10 +134,11 @@ var xmlify = function(jsObject /*, [root], [options] */) {
                 element = node;
             } else {
                 // otherwise normal element + value
-                element = doc.createElement(elementName);
+                element = doc.createElement(elementName || "undefined");
                 element.appendChild(node);
             }
-            xmlNode.appendChild(element);
+            if (elementName && value)
+                xmlNode.appendChild(element);
             return;
         }
 
