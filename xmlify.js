@@ -89,8 +89,11 @@ var xmlify = function(jsObject /*, [root], [options] */) {
     // convert jsObject into xmlRoot
     jsToXml(jsObject, config.root, xmlRoot);
 
-    var xml = doc.documentElement.toString();
-
+    var xml;
+    if (config.root)
+        xml = doc.documentElement.toString();
+    else 
+        xml = doc.documentElement.firstChild.toString();
     if (config.xmlDeclaration) xml = xmlDeclaration + xml;
 
     return xml;
