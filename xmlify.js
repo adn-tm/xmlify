@@ -9,7 +9,7 @@
 // inflection for singularisation
 var DomParser = require('xmldom').DOMParser;
 var inflection = require( 'inflection' );
-
+var transliteration = require('transliteration');
 
 /*
  * Summary of method:
@@ -89,15 +89,24 @@ var xmlify = function(jsObject /*, [root], [options] */) {
     // convert jsObject into xmlRoot
     jsToXml(jsObject, config.root, xmlRoot);
 
-    var xml;
-    if (config.root)
-        xml = doc.documentElement.toString();
-    else 
-        xml = doc.documentElement.firstChild.toString();
+    var xml = doc.documentElement.toString();
+
     if (config.xmlDeclaration) xml = xmlDeclaration + xml;
 
     return xml;
 
+
+    function fixElementName(name) {
+        if (!name)
+            return "undefined";
+        if (name.match(/^(?!XML)[a-z][a-z0-9-]*$/i))
+            return name;
+        var a=transliteration(name);
+        if (a.match(/^(?!XML)[a-z][a-z0-9-]*$/i))
+            return a;
+        return "_"+a
+
+    }
 
     /**
      * Converts (JavaScript) jsObj into (DOM) xmlNode.
@@ -127,6 +136,7 @@ var xmlify = function(jsObject /*, [root], [options] */) {
             xmlNode.setAttribute(attrName, attrVal);
             return;
         }
+        var ensuredElementName=fixElementName(elementName);
 
         // handle primitives
         if (isPrimitive(jsObj)) {
@@ -137,18 +147,17 @@ var xmlify = function(jsObject /*, [root], [options] */) {
                 element = node;
             } else {
                 // otherwise normal element + value
-                element = doc.createElement(elementName || "undefined");
+                element = doc.createElement(ensuredElementName);
                 element.appendChild(node);
             }
-            if (elementName && value)
-                xmlNode.appendChild(element);
+            xmlNode.appendChild(element);
             return;
         }
 
         // handle dates
         if (jsObj.constructor == Date) {
             node = doc.createTextNode(dateFormatted(jsObj));
-            element = doc.createElement(elementName);
+            element = doc.createElement(ensuredElementName);
             element.appendChild(node);
             xmlNode.appendChild(element);
             return;
@@ -161,7 +170,7 @@ var xmlify = function(jsObject /*, [root], [options] */) {
             if ((config.wrapArrays && elementName!=singularName)
                 || jsObj.length===0
                 || xmlNode.constructor.name=='Document') {
-                xmlChildNode = doc.createElement(elementName);
+                xmlChildNode = doc.createElement(ensuredElementName);
                 xmlNode.appendChild(xmlChildNode);
                 xmlNode = xmlChildNode;
             }
@@ -178,7 +187,7 @@ var xmlify = function(jsObject /*, [root], [options] */) {
 
         // handle objects (recursively)
         if (typeof jsObj == 'object') {
-            xmlChildNode = doc.createElement(elementName);
+            xmlChildNode = doc.createElement(ensuredElementName);
             xmlNode.appendChild(xmlChildNode);
             // recursively convert each object property
             for (var childName in jsObj) {
