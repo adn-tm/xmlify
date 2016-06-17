@@ -55,7 +55,9 @@ var xmlify = function(jsObject /*, [root], [options] */) {
         xmlDeclaration: true,   // whether to include an xml declaration
         root:           'root', // name of XML root element
         wrapArrays:     true,   // whether to wrap (plural) arrays in enclosing element
+        arrayItemNodeName: inflection.singularize
     };
+
 
     // options: string argument specifies root, object literal specifies any option(s)
     for (var arg=1; arg<arguments.length; arg++) {
@@ -73,6 +75,7 @@ var xmlify = function(jsObject /*, [root], [options] */) {
         }
     }
 
+
     var xmlDeclaration = '<?xml version="1.0" encoding="UTF-8"?>';
 
     // dummy document for creating elements & text nodes
@@ -87,7 +90,7 @@ var xmlify = function(jsObject /*, [root], [options] */) {
     }
 
     // convert jsObject into xmlRoot
-    jsToXml(jsObject, config.root, xmlRoot);
+    jsToXml(jsObject, config.root || "data", xmlRoot);
     var xml;        
     if (config.root)  
          xml = doc.documentElement.toString();     
@@ -120,7 +123,7 @@ var xmlify = function(jsObject /*, [root], [options] */) {
      */
     function jsToXml(jsObj, elementName, xmlNode) {
         var node, element, xmlChildNode;
-
+      
         // if jsObj is undefined, convert it to string '[undefined]'
         if (typeof jsObj == 'undefined') jsObj = '[undefined]';
 
@@ -139,6 +142,7 @@ var xmlify = function(jsObject /*, [root], [options] */) {
             xmlNode.setAttribute(attrName, attrVal);
             return;
         }
+
         var ensuredElementName=fixElementName(elementName);
 
         // handle primitives
@@ -168,7 +172,13 @@ var xmlify = function(jsObject /*, [root], [options] */) {
 
         // handle arrays (recursively)
         if (jsObj.constructor == Array) {
-            var singularName = inflection.singularize(elementName);
+            var singularName;
+            if (typeof config.arrayItemNodeName=="function")
+                singularName=config.arrayItemNodeName(elementName);
+            else if (typeof config.arrayItemNodeName=="string")
+                singularName=config.arrayItemNodeName;
+            else singularName=elementName;
+            
             // add wrapper node? (always for empty arrays and if root element is array)
             if ((config.wrapArrays && elementName!=singularName)
                 || jsObj.length===0
