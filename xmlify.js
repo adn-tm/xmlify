@@ -189,7 +189,7 @@ var xmlify = function(jsObject /*, [root], [options] */) {
             }
             // recursively convert each array element
             for (var n=0; n<jsObj.length; n++) {
-                if (jsObj[n].constructor == Array) throw Error('Xmlify: Cannot convert nested arrays');
+                // if (jsObj[n].constructor == Array) throw Error('Xmlify: Cannot convert nested arrays');
                 jsToXml(jsObj[n], config.wrapArrays ? singularName : elementName, xmlNode);
             }
             return;
